@@ -20,6 +20,11 @@ public class Monster {
 		this.race = race;
 		this.dg = dg;
 	}
+	public Monster(Monster monster) {
+		this.name = monster.getName();
+		this.race = monster.getRace();
+		this.dg = monster.getDg();
+	}
 	public String getName() {
 		return name;
 	}
