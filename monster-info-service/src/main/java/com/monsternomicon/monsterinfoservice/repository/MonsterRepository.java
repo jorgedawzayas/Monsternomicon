@@ -1,11 +1,18 @@
 package com.monsternomicon.monsterinfoservice.repository;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 
 import com.monsternomicon.monsterinfoservice.models.Monster;
 
-public interface MonsterRepository extends MongoRepository <Monster, String>{
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+public interface MonsterRepository extends ReactiveCrudRepository <Monster, String>{
 	
-	public Monster findByName (String name);
+	public Mono<Monster> findByName (String name);
+	
+	public Flux<Monster> findByType (String type);
+	
+	public Flux<Monster> findByHitDice (String hitDice);
 		
 }

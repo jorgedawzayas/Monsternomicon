@@ -1,27 +1,27 @@
 package com.monsternomicon.monstercatalogservice.resources;
 
-import java.net.URI;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resources;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.monsternomicon.monstercatalogservice.models.Monster;
 import com.monsternomicon.monstercatalogservice.models.MonsterItem;
-import com.monsternomicon.monstercatalogservice.models.MonsterItemResource;
-import com.monsternomicon.monstercatalogservice.repository.MonsterItemRepository;
+
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 
 @RestController
@@ -29,38 +29,144 @@ import com.monsternomicon.monstercatalogservice.repository.MonsterItemRepository
 public class MonsterCatalogResource {
 	
 	@Autowired
+	@LoadBalanced
 	private RestTemplate restTemplate;
 	
 	@Autowired
-	private WebClient.Builder webClientBuilder;
+	@LoadBalanced
+	private WebClient webClient;
 	
-	@Autowired
-	MonsterItemRepository monsterItemRepository;
-	
-	@GetMapping
-	public ResponseEntity<Resources<MonsterItemResource>> getMonsters(){
+	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Flux<MonsterItem>> getMonsters(){
 		
-		List<MonsterItemResource> collection = monsterItemRepository.findAll().stream().map(MonsterItemResource::new).collect(Collectors.toList());
-		
-		for(MonsterItemResource monster : collection) {
+		try {
+			return ResponseEntity.ok(webClient.get()
+					.uri("/all")
+					.retrieve()
+					.onStatus(HttpStatus::is4xxClientError, clientResponse ->
+							Mono.error(new Exception())
+					)
+					.onStatus(HttpStatus::is5xxServerError, clientResponse ->
+							Mono.error(new Exception())
+					)
+					.bodyToFlux(MonsterItem.class));
 			
-			String name = monster.getName();
-			String uriString = ServletUriComponentsBuilder.fromHttpUrl("http://192.168.1.37:8084/api/monster/" + name).build().toUriString();
-			monster.add(new Link(uriString, "info"));
+		}catch(Exception e) {
+			System.out.println(e.getMessage());
 		}
 		
-		Resources<MonsterItemResource> resources = new Resources<MonsterItemResource>(collection);
-
-		return ResponseEntity.ok(resources);
-
+		return null;
 	}
 	
-	@PostMapping("{name}")
-	public ResponseEntity<MonsterItem> addMonster(@PathVariable("name") String name){
+	@GetMapping(value = "/monster/{name}", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Mono<Monster>> getMonsterInfo(@PathVariable("name") String name){
 		
-		MonsterItem monsterItem = new MonsterItem(name);
-		monsterItemRepository.save(monsterItem);
+		try {
+			return ResponseEntity.ok(webClient.get()
+					.uri("/" + name)
+					.retrieve()
+					.onStatus(HttpStatus::is4xxClientError, clientResponse ->
+							Mono.error(new Exception())
+					)
+					.onStatus(HttpStatus::is5xxServerError, clientResponse ->
+							Mono.error(new Exception())
+					)
+					.bodyToMono(Monster.class));
+			
+		}catch(Exception e) {
+			System.out.println(e.getMessage());
+		}
 		
-		return ResponseEntity.ok(monsterItem);
+		return null;
+	}
+	
+	@PostMapping(value = "/monster", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Mono<Monster>> addMonster(@ModelAttribute Monster request){
+		
+		try {
+			return ResponseEntity.ok(webClient.post()
+					//.body(Mono.just(monster), Monster.class)
+					.syncBody(request)
+					.retrieve()
+					.onStatus(HttpStatus::is4xxClientError, clientResponse -> 
+							Mono.error(new Exception())
+					)
+					.onStatus(HttpStatus::is5xxServerError, clientResponse ->
+							Mono.error(new Exception())
+					)
+					.bodyToMono(Monster.class));
+			
+		}catch(Exception e) {
+			System.out.println(e.getMessage());
+		}
+		
+		return null;
+	}
+	
+	@PutMapping(value = "/monster/{name}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Mono<Monster>> editMonster(@PathVariable("name") String name, @ModelAttribute Monster request){
+		
+		try {
+			return ResponseEntity.ok(webClient.put()
+					.uri("/" + name)
+					.syncBody(request)
+					.retrieve()
+					.onStatus(HttpStatus::is4xxClientError, clientResponse ->
+							Mono.error(new Exception())
+					)
+					.onStatus(HttpStatus::is5xxServerError, clientResponse ->
+							Mono.error(new Exception())
+					)
+					.bodyToMono(Monster.class));
+			
+		}catch(Exception e) {
+			System.out.println(e.getMessage());
+		}
+		
+		return null;
+	}
+	
+	@DeleteMapping(value = "/monster")
+	public ResponseEntity<Mono<Void>> deleteAllMonster() {
+		
+		try {
+			return ResponseEntity.ok(webClient.delete()
+				.uri("/all")
+				.retrieve()
+				.onStatus(HttpStatus::is4xxClientError, clientResponse ->
+						Mono.error(new Exception())
+				)
+				.onStatus(HttpStatus::is5xxServerError, clientResponse ->
+						Mono.error(new Exception())
+				)
+				.bodyToMono(Void.class));
+			
+		}catch(Exception e) {
+			System.out.println(e.getMessage());
+		}
+		
+		return null;
+	}
+	
+	@DeleteMapping(value = "/monster/{name}")
+	public ResponseEntity<Mono<Void>> deleteMonster(@PathVariable("name") String name){
+		
+		try {
+			return ResponseEntity.ok(webClient.delete()
+					.uri("/" + name)
+					.retrieve()
+					.onStatus(HttpStatus::is4xxClientError, clientResponse ->
+							Mono.error(new Exception())
+					)
+					.onStatus(HttpStatus::is5xxServerError, clientResponse ->
+							Mono.error(new Exception())
+					)
+					.bodyToMono(Void.class));
+		
+		}catch(Exception e) {
+			System.out.println(e.getMessage());
+		}
+		
+		return null;
 	}
 }
