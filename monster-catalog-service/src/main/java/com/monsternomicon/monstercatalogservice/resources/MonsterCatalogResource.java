@@ -18,7 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.monsternomicon.monstercatalogservice.models.Monster;
 import com.monsternomicon.monstercatalogservice.models.MonsterItem;
-
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -36,7 +36,8 @@ public class MonsterCatalogResource {
 	@LoadBalanced
 	private WebClient webClient;
 	
-	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+	@HystrixCommand(fallbackMethod = "fallBack", commandKey = "getMonsters", groupKey = "Catalog")
+	@GetMapping(value = "/monster", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Flux<MonsterItem>> getMonsters(){
 		
 		try {
@@ -58,6 +59,7 @@ public class MonsterCatalogResource {
 		return null;
 	}
 	
+	@HystrixCommand
 	@GetMapping(value = "/monster/{name}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Mono<Monster>> getMonsterInfo(@PathVariable("name") String name){
 		
@@ -80,6 +82,7 @@ public class MonsterCatalogResource {
 		return null;
 	}
 	
+	@HystrixCommand
 	@PostMapping(value = "/monster", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Mono<Monster>> addMonster(@ModelAttribute Monster request){
 		
@@ -103,6 +106,7 @@ public class MonsterCatalogResource {
 		return null;
 	}
 	
+	@HystrixCommand
 	@PutMapping(value = "/monster/{name}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Mono<Monster>> editMonster(@PathVariable("name") String name, @ModelAttribute Monster request){
 		
@@ -126,6 +130,7 @@ public class MonsterCatalogResource {
 		return null;
 	}
 	
+	@HystrixCommand
 	@DeleteMapping(value = "/monster")
 	public ResponseEntity<Mono<Void>> deleteAllMonster() {
 		
@@ -148,6 +153,7 @@ public class MonsterCatalogResource {
 		return null;
 	}
 	
+	@HystrixCommand
 	@DeleteMapping(value = "/monster/{name}")
 	public ResponseEntity<Mono<Void>> deleteMonster(@PathVariable("name") String name){
 		
@@ -168,5 +174,11 @@ public class MonsterCatalogResource {
 		}
 		
 		return null;
+	}
+	
+	public ResponseEntity<Flux<MonsterItem>> fallBack(){
+		
+		Flux<MonsterItem> response = Flux.empty();
+		return ResponseEntity.ok(response);
 	}
 }

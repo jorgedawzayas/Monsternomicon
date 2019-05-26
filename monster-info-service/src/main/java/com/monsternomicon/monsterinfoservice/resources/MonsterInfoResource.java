@@ -16,6 +16,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.monsternomicon.monsterinfoservice.models.Monster;
 import com.monsternomicon.monsterinfoservice.models.MonsterItem;
 import com.monsternomicon.monsterinfoservice.repository.MonsterRepository;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -32,6 +33,7 @@ public class MonsterInfoResource {
 	@Autowired
 	private WebClient.Builder webClientBuilder;
 	
+	@HystrixCommand
 	@GetMapping(value = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
 	public Flux<MonsterItem> getAllMonsters(){
 		
@@ -45,6 +47,7 @@ public class MonsterInfoResource {
 		return null;
 	}
 	
+	@HystrixCommand
 	@GetMapping(value = "/{name}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public Mono<Monster> getMonsterInfo(@PathVariable("name") String name) {
 		
@@ -59,6 +62,7 @@ public class MonsterInfoResource {
 		return null;
 	}
 	
+	@HystrixCommand
 	@PostMapping(/*consumes = MediaType.MULTIPART_FORM_DATA_VALUE,*/ produces = MediaType.APPLICATION_JSON_VALUE)
 	public Mono<Monster> addMonster(@ModelAttribute Monster monsterRequest){
 		
@@ -72,6 +76,7 @@ public class MonsterInfoResource {
 		return null;
 	}
 	
+	@HystrixCommand
 	@PutMapping(value = "{name}", /*consumes = MediaType.MULTIPART_FORM_DATA_VALUE*/ produces = MediaType.APPLICATION_JSON_VALUE)
 	public Mono<Monster> editMonster(@PathVariable("name") String name, @ModelAttribute Monster monsterRequest){
 		
@@ -89,6 +94,7 @@ public class MonsterInfoResource {
 		return null;
 	}
 	
+	@HystrixCommand
 	@DeleteMapping(value = "{name}")
 	public Mono<Void> deleteMonster(@PathVariable("name") String name){
 		
@@ -103,6 +109,7 @@ public class MonsterInfoResource {
 		
 	}
 	
+	@HystrixCommand
 	@DeleteMapping(value = "/all")
 	public Mono<Void> deleteAllMonsters() {
 		
