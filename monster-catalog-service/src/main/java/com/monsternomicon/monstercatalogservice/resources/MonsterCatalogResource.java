@@ -1,7 +1,8 @@
 package com.monsternomicon.monstercatalogservice.resources;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.cloud.netflix.hystrix.HystrixCommands;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,28 +30,30 @@ import reactor.core.publisher.Mono;
 public class MonsterCatalogResource {
 	
 	@Autowired
-	@LoadBalanced
 	private RestTemplate restTemplate;
 	
 	@Autowired
-	@LoadBalanced
 	private WebClient webClient;
 	
-	@HystrixCommand(fallbackMethod = "fallBack", commandKey = "getMonsters", groupKey = "Catalog")
+	@Autowired
+	private Environment env;
+	
+	@HystrixCommand
 	@GetMapping(value = "/monster", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Flux<MonsterItem>> getMonsters(){
 		
 		try {
-			return ResponseEntity.ok(webClient.get()
+			Flux<MonsterItem> monsters = webClient.get()
 					.uri("/all")
 					.retrieve()
-					.onStatus(HttpStatus::is4xxClientError, clientResponse ->
-							Mono.error(new Exception())
-					)
-					.onStatus(HttpStatus::is5xxServerError, clientResponse ->
-							Mono.error(new Exception())
-					)
-					.bodyToFlux(MonsterItem.class));
+					.bodyToFlux(MonsterItem.class);
+			
+			Flux<MonsterItem> defaultFlux = HystrixCommands.from(monsters)
+					.commandName("Get Monsters")
+					.fallback(Flux.empty())
+					.toFlux();
+			
+			return ResponseEntity.ok(defaultFlux);
 			
 		}catch(Exception e) {
 			System.out.println(e.getMessage());
@@ -64,16 +67,17 @@ public class MonsterCatalogResource {
 	public ResponseEntity<Mono<Monster>> getMonsterInfo(@PathVariable("name") String name){
 		
 		try {
-			return ResponseEntity.ok(webClient.get()
+			Mono<Monster> monster = webClient.get()
 					.uri("/" + name)
 					.retrieve()
-					.onStatus(HttpStatus::is4xxClientError, clientResponse ->
-							Mono.error(new Exception())
-					)
-					.onStatus(HttpStatus::is5xxServerError, clientResponse ->
-							Mono.error(new Exception())
-					)
-					.bodyToMono(Monster.class));
+					.bodyToMono(Monster.class);
+			
+			Mono<Monster> defaultMono = HystrixCommands.from(monster)
+					.commandName("Get Monster")
+					.fallback(Mono.empty())
+					.toMono();
+			
+			return ResponseEntity.ok(defaultMono);
 			
 		}catch(Exception e) {
 			System.out.println(e.getMessage());
@@ -87,17 +91,18 @@ public class MonsterCatalogResource {
 	public ResponseEntity<Mono<Monster>> addMonster(@ModelAttribute Monster request){
 		
 		try {
-			return ResponseEntity.ok(webClient.post()
+			Mono<Monster> monsterPost = webClient.post()
 					//.body(Mono.just(monster), Monster.class)
 					.syncBody(request)
 					.retrieve()
-					.onStatus(HttpStatus::is4xxClientError, clientResponse -> 
-							Mono.error(new Exception())
-					)
-					.onStatus(HttpStatus::is5xxServerError, clientResponse ->
-							Mono.error(new Exception())
-					)
-					.bodyToMono(Monster.class));
+					.bodyToMono(Monster.class);
+			
+			Mono<Monster> defaultMono = HystrixCommands.from(monsterPost)
+					.commandName("Post Monster")
+					.fallback(Mono.empty())
+					.toMono();
+			
+			return ResponseEntity.ok(defaultMono);
 			
 		}catch(Exception e) {
 			System.out.println(e.getMessage());
@@ -111,17 +116,18 @@ public class MonsterCatalogResource {
 	public ResponseEntity<Mono<Monster>> editMonster(@PathVariable("name") String name, @ModelAttribute Monster request){
 		
 		try {
-			return ResponseEntity.ok(webClient.put()
+			Mono<Monster> monsterPut = webClient.put()
 					.uri("/" + name)
 					.syncBody(request)
 					.retrieve()
-					.onStatus(HttpStatus::is4xxClientError, clientResponse ->
-							Mono.error(new Exception())
-					)
-					.onStatus(HttpStatus::is5xxServerError, clientResponse ->
-							Mono.error(new Exception())
-					)
-					.bodyToMono(Monster.class));
+					.bodyToMono(Monster.class);
+			
+			Mono<Monster> defaultMono = HystrixCommands.from(monsterPut)
+					.commandName("Put Monster")
+					.fallback(Mono.empty())
+					.toMono();
+			
+			return ResponseEntity.ok(defaultMono);
 			
 		}catch(Exception e) {
 			System.out.println(e.getMessage());
@@ -135,16 +141,17 @@ public class MonsterCatalogResource {
 	public ResponseEntity<Mono<Void>> deleteAllMonster() {
 		
 		try {
-			return ResponseEntity.ok(webClient.delete()
+			Mono<Void> deleteMonsters = webClient.delete()
 				.uri("/all")
 				.retrieve()
-				.onStatus(HttpStatus::is4xxClientError, clientResponse ->
-						Mono.error(new Exception())
-				)
-				.onStatus(HttpStatus::is5xxServerError, clientResponse ->
-						Mono.error(new Exception())
-				)
-				.bodyToMono(Void.class));
+				.bodyToMono(Void.class);
+			
+			Mono<Void> defaultMono = HystrixCommands.from(deleteMonsters)
+					.commandName("Delete Monsters")
+					.fallback(Mono.empty())
+					.toMono();
+			
+			return ResponseEntity.ok(defaultMono);
 			
 		}catch(Exception e) {
 			System.out.println(e.getMessage());
@@ -158,17 +165,18 @@ public class MonsterCatalogResource {
 	public ResponseEntity<Mono<Void>> deleteMonster(@PathVariable("name") String name){
 		
 		try {
-			return ResponseEntity.ok(webClient.delete()
+			Mono<Void> deleteMonster = webClient.delete()
 					.uri("/" + name)
 					.retrieve()
-					.onStatus(HttpStatus::is4xxClientError, clientResponse ->
-							Mono.error(new Exception())
-					)
-					.onStatus(HttpStatus::is5xxServerError, clientResponse ->
-							Mono.error(new Exception())
-					)
-					.bodyToMono(Void.class));
-		
+					.bodyToMono(Void.class);
+			
+			Mono<Void> defaultMono = HystrixCommands.from(deleteMonster)
+					.commandName("Delete Monster")
+					.fallback(Mono.empty())
+					.toMono();
+			
+			return ResponseEntity.ok(defaultMono);
+			
 		}catch(Exception e) {
 			System.out.println(e.getMessage());
 		}
@@ -176,9 +184,11 @@ public class MonsterCatalogResource {
 		return null;
 	}
 	
-	public ResponseEntity<Flux<MonsterItem>> fallBack(){
+	@GetMapping(value = "/status")
+	public String status() {
 		
-		Flux<MonsterItem> response = Flux.empty();
-		return ResponseEntity.ok(response);
+		return "Working on port " + env.getProperty("local.server.port");
 	}
+	
+	
 }

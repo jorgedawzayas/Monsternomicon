@@ -2,3 +2,11 @@ language: java
 script:
   - cd api-gateway
   - mvn clean install
+  - cd ../discovery-server
+  - mvn clean install
+  - cd ../monster-catalog-service
+  - mvn clean install
+  - cd ../monster-info-service
+  - mvn clean install
+  - cd ../turbine-dashboard
+  - mvn clean install

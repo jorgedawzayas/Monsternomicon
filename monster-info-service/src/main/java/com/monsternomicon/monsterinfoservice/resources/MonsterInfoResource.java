@@ -1,7 +1,6 @@
 package com.monsternomicon.monsterinfoservice.resources;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,7 +28,6 @@ public class MonsterInfoResource {
 	@Autowired
 	MonsterRepository monsterRepository;
 	
-	@LoadBalanced
 	@Autowired
 	private WebClient.Builder webClientBuilder;
 	
@@ -77,7 +75,7 @@ public class MonsterInfoResource {
 	}
 	
 	@HystrixCommand
-	@PutMapping(value = "{name}", /*consumes = MediaType.MULTIPART_FORM_DATA_VALUE*/ produces = MediaType.APPLICATION_JSON_VALUE)
+	@PutMapping(value = "/{name}", /*consumes = MediaType.MULTIPART_FORM_DATA_VALUE*/ produces = MediaType.APPLICATION_JSON_VALUE)
 	public Mono<Monster> editMonster(@PathVariable("name") String name, @ModelAttribute Monster monsterRequest){
 		
 		try {
@@ -95,7 +93,7 @@ public class MonsterInfoResource {
 	}
 	
 	@HystrixCommand
-	@DeleteMapping(value = "{name}")
+	@DeleteMapping(value = "/{name}")
 	public Mono<Void> deleteMonster(@PathVariable("name") String name){
 		
 		try {
