@@ -1,0 +1,70 @@
+version: '3.7'
+services:
+  monsterdiscovery:
+    build:
+      context: ./discovery-server
+      dockerfile: Dockerfile
+    image: discoveryserver
+    ports:
+      - 8761:8761
+    networks:
+      - network1
+  monsterapi:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    image: apigateway
+    ports:
+      - 8084:8084
+    networks:
+      - network1
+    environment:
+        DISCOVERY_NAME: "monsterdiscovery"
+    depends_on:
+      - monsterdiscovery
+  monstercatalog:
+    build:
+      context: ./monster-catalog-service
+      dockerfile: Dockerfile
+    image: catalogmonster
+    ports:
+      - "8100-8199:8081"
+    networks:
+      - network1
+    environment:
+        DISCOVERY_NAME: "monsterdiscovery"
+    depends_on:
+      - monsterdiscovery
+      - monsterinfo
+  monsterinfo:
+    build:
+      context: ./monster-info-service
+      dockerfile: Dockerfile
+    image: infomonster
+    ports:
+      - "8200-8299:8082"
+    networks:
+      - network1
+    environment:
+        DISCOVERY_NAME: "monsterdiscovery"
+    depends_on:
+      - monsterdiscovery
+  monsterturbine:
+    build:
+      context: ./turbine-dashboard
+      dockerfile: Dockerfile
+    image: turbinemonster
+    ports:
+      - 8090:8090
+    networks:
+      - network1
+    environment:
+        DISCOVERY_NAME: "monsterdiscovery"
+    depends_on:
+      - monsterdiscovery
+      - monsterapi
+      - monstercatalog
+      - monsterinfo
+ 
+networks:
+  network1:
