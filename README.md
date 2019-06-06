@@ -2,6 +2,7 @@ Monsternomicon
 
 Para iniciar la aplicación clonar el repositorio, hacer maven install para crear los ficheros .jar si no estan ya creados.
 Desde la linea de comandos situarse en la carpeta del proyecto donde se encuentra el fichero docker compose y lanzar el siguiente comando:  -docker-compose up
+
 Para comprobar que todo ha funcionado correctamente ir a http://localhost:8761/ donde veremos el menú de Eureka Discovery, desde aquí podemos ver que microservicios se han iniciado y cuantas replicas tenemos.
 
 Endpoints de interes:
